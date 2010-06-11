@@ -1,0 +1,86 @@
+//--------------------------------------------------------------------
+// The Aurora Editor v3.0, Copyright (C) 1993-1996 nuText Systems
+//
+// VGREP.AML
+// Lechee Visual Grep Extensions (included by Main.aml)
+//
+// you must redefine <enter> in kbd.aml for several parts 
+// but only object edit make <enter> as myEnter
+//
+// When you are finished, save this file and select Recompile the
+// Editor from the Set menu. Exit and re-enter the editor for your
+// changes to take effect.
+//--------------------------------------------------------------------
+
+
+// compile time macros and function definitions
+include  bootpath "define.aml"
+
+function vgrep
+  // get the word at the cursor
+  vword = send "getword" "@a-zA-Z_0-9?"
+  vmask = gethiststr "_vgrepMask"
+  vdir  = gethiststr "_vgrepDir"
+  // dialog box to get filespec and dirs
+  dialog "Vgrep Power by Lechee.Lai" 55 5 "V"
+  field "&Search for: >"  3  2 38 vword
+  field "File &Mask:  >"  3  3 38 vmask
+  field "Start &Dirs: >"  3  4 38 vdir
+  if (getdialog ref vword ref vmask ref vdir) <> 'Ok' then
+    return
+  end
+  // prepair for vgrep
+  addhistory "_vgrepMask" vmask
+  addhistory "_vgrepDir"  vdir
+  cmd = "vgrep.exe --grep "+vword+" "+vdir+" "+vmask
+  say "vgrep are working in progress...."
+  run cmd
+  say ""
+  msgbox "vGrep Completed." "vGrep :-)"
+end
+
+function vgrepList
+   send "open" "c:\\fte.grp" "z"
+   send "bufferflag" "r"
+end
+
+function myEnter
+   if getbufname == "c:\\fte.grp" then
+        goFileName = 0
+        goLine = 0
+        maxlen = 0
+        maxlen = getlinelen
+        pushcursor
+        chkstr = gettext
+        splitstr ':' chkstr ref chkstr
+        if chkstr == "File" then
+          goFileName = 1
+          chkstr = gettext 7 maxlen-7
+        else
+          goLine = chkstr
+        end
+        while goFileName == 0
+          up
+          chkstr = gettext
+          splitstr ':' chkstr ref chkstr
+          if chkstr == "File" then
+            chkstr = gettext 7 maxlen-7
+            goFileName = 1
+            popcursor
+          end
+        endwhile
+        if (goFileName>0) then
+          send "close"
+          send "open" chkstr "z"
+          if (goLine>0) then
+            row (goLine)
+          end
+        end
+   else
+        send "enter"
+   end
+end
+
+key <alt '> vgrep
+key <ctrl f8> vgrep
+key <alt f8> vgrepList

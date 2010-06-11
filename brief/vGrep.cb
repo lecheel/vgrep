@@ -1,0 +1,418 @@
+/*
+**  BRIEF 3.1 -- VGrep Macro for Brief 3.1
+**
+**  Written by Lechee.Lai MAY-11-2002
+**
+**  http://welcome.to/lechee
+**
+**  vgrep Location http://www.geocities.com/lecheel/vgrep/vgrep.htm
+**
+*/
+
+// Usage:
+//        use W.BAT found symbol in your special tip as "W Pattern"
+//        result save as c:\fte.grp it is because all W.bat create the 
+//        common log for FTE/TSE/BRiEF of course you can invoke via 
+//        "CreateFTE" which assign_to_key(:<Ctrl-F8>","CreateFTE")
+//        assign_to_key ("<Alt-F8>","VGrep");
+//
+// Notes:
+//        currently this Macro only work for 
+//         GnuGrep 2.0f Win32  http://www.geocities.com/lechee/vgrep/vgrep.htm
+//         SemwareGrep 2.00 Win32 http://www.semware.com got trial TsePRO
+//
+//
+
+
+#include "dialog.h"
+#include "win_ctrl.h"
+
+string Find_TspSymbol(int);  
+string Find_NameSymbol(int);
+int find_token(string,int);  // Delete Until End of Blank
+string cut_first(string);    // Cut First Token of String
+void VgrepList();            // Popup the TSP Brief Result
+void LoadLOG();
+
+extern string _s_pat;
+extern int _dir;
+global int _buf_list;
+global int _log_list;
+global int _end_buf;         // Go _log_list
+global int GoLine;
+global string GoName;
+global int TotalItem;
+string opname,fname,fline;
+
+#define SYSTEM   1
+#define GrepVersion 200      // for semware grep v2.0
+
+// ---------------------------------------------------------------------------
+
+_init ()
+{
+       assign_to_key ("<Ctrl-F8>", "CreateFTE");
+       assign_to_key ("<Alt-F8>", "VGrep");
+}
+
+
+void LoadLOG ()
+{
+        string TmpStr;
+        int    i,
+               TotalLine;
+        top_of_buffer();
+          translate(" line "," ",1,1);          // For semware grep v2.0
+
+        set_buffer(_log_list);
+        end_of_buffer();
+        inq_position(TotalLine,NULL);
+        TotalItem = TotalLine;          // Total Item
+        top_of_buffer();                // Top of Buffer
+        
+        for (i=0;i<TotalItem;i++) {
+         TmpStr = read();                // Read a Line 
+         down();
+         set_buffer(_buf_list);
+         insert(TmpStr);                 //  Fill to Buffer List
+         set_buffer(_log_list);          //  Read Data in _log_list
+        }
+        set_buffer (_buf_list);
+
+}                         
+
+
+string Get_Pattern (void)
+{
+	int		identifier_len;
+
+	string	identifier;
+
+	save_position ();
+
+	//
+	//		Find non-identifier char to left.
+	//
+
+   search_back ("<|[~_$a-zA-Z0-9][_$a-zA-Z]", 1);
+
+	//
+	//		Find identifier char to right, or end of buffer.
+	//
+
+   if ((identifier_len = search_fwd ("[_$a-zA-Z0-9]+", -1) - 1) > 0)
+      identifier = read (identifier_len);
+	restore_position ();
+	returns (identifier);
+}
+
+
+
+void VGrep ()
+{
+        int     i,cur_buf;
+        string  Status;
+        cur_buf = inq_buffer();
+        _end_buf = cur_buf;
+        GoName = "";
+	set_buffer (_buf_list = create_buffer ("ViewGREP", NULL, SYSTEM));
+	set_buffer (_log_list = create_buffer ("GREP_LOG","C:\\FTE.GRP", SYSTEM));
+        LoadLOG();
+	set_ctrl_state( ZOOM_BTN, HIDE_CTRL);		// hide the zoom button for this window
+	set_ctrl_state( HORZ_SCROLL, HIDE_CTRL);	// hide the horz scroll bar for this window
+        if (TotalItem<10)
+                create_window (1, 3+TotalItem*2, 77, 1, " or  to select, ESC to exit. Power by Lechee.Lai Copyright 2oo2");
+        else
+                create_window (1, 22, 77, 1, " or  to select, ESC to exit. Power by Lechee.Lai Copyright 2oo2");
+	set_ctrl_state( ZOOM_BTN, SHOW_CTRL);		// show the zoom button
+	set_ctrl_state( HORZ_SCROLL, SHOW_CTRL);	// show the horz scroll bar 
+	attach_buffer (_buf_list);
+
+	keyboard_push ();
+	assign_to_key ("<Down>", "_list_down");
+	assign_to_key ("<Up>", "_list_up");
+//	assign_to_key ("<Del>","_list_delete");           // Not Imperement Yet!
+	assign_to_key ("<Enter>", "_list_edit");
+	assign_to_key ("<Esc>", "exit");
+
+        set_buffer (_buf_list);
+	/*
+	**	specify the function to handle mouse events and save the
+	** previous mouse handler to allow for sub-classing of events
+	*/
+	set_mouse_action( "mouse_buf_list" );
+
+	move_abs (1 , 100);
+	drop_anchor (3);
+	move_abs (1, 1);
+	set_buffer (_buf_list);
+	refresh ();
+
+	process ();
+	keyboard_pop ();
+
+	raise_anchor ();
+	delete_window ();
+  delete_buffer (_log_list);
+	delete_buffer (_buf_list);
+        set_buffer (_end_buf);
+        if (strlen(GoName)>1) {
+                edit_file(GoName);
+                goto_line(GoLine);
+                GoName="";
+                message(Status);
+                }
+        else 
+          message("command cancelled.");
+
+}
+
+int _list_down ()
+{
+	int line;
+
+	inq_position (line);
+
+   if (0 && line % 2 == 0)
+		{
+		swap_anchor();
+		refresh();
+		}
+
+	move_rel (1 , 0);
+
+	if (inq_position ())
+		{
+		move_rel (-1 , 0);
+		return (0);
+		}
+	else
+		{
+		raise_anchor ();
+		drop_anchor (3);
+		move_rel (0 , 0);
+		set_buffer (_buf_list);
+		returns (1);
+		}
+       
+}
+
+int _list_up ()
+{
+	int line;
+
+	inq_position (line);
+
+	if (0 && line % 2 == 0)
+		{
+		swap_anchor();
+		refresh();
+		}
+
+	if (!up ())
+		return (0);
+	else
+		{
+		raise_anchor ();
+		drop_anchor (3);
+		move_rel (0 , 0);
+		set_buffer (_buf_list);
+		returns (1);
+		}
+}
+
+void _list_edit ()
+{
+        int     CurLst_Buf,
+                GoItem,i,j,
+                IndexItem;
+        string  TmpStr,
+                TarName,
+                TarLine;
+        
+        CurLst_Buf = inq_buffer();              // Memory Current Buffer
+        inq_position(GoItem,NULL);              // Get Current Item
+        IndexItem = GoItem;                     // Get Real Index
+        TmpStr = Find_TspSymbol(IndexItem);     // Find TSP Symbol (Cut Grabo Item)
+        i = index(TmpStr,":");                  // Search First Blank Occour
+        j = strlen(TmpStr);                     // Length of TmpStr
+        TarLine = substr(TmpStr,1,i-1);         // Locate the Targe Name
+        TmpStr = Find_NameSymbol(IndexItem);
+        set_buffer(CurLst_Buf);
+        GoName = TmpStr;
+        GoLine = atoi(TarLine);                 // Convert to Number
+        exit();
+
+}
+
+string Find_NameSymbol(int Item)
+{
+   int i=0,j;
+   int GotName=0;
+   string TmpStr1,sss;
+   set_buffer (_log_list);
+   top_of_buffer();
+   goto_line (Item);
+   
+   for (j=Item;j>0;j--) {
+     TmpStr1 = read();
+     i = index(TmpStr1,"File:");
+     if (i==1) {
+        GotName=1;
+        break;
+     }
+     up();
+   }
+   j = strlen(TmpStr1)-7;
+   if (GotName) 
+     return(substr(TmpStr1,7,j));
+   else 
+     return("ERROR");
+
+}
+
+
+string Find_TspSymbol(int Item)
+{
+        int s_len, i;
+        string TmpStr1;
+        int cur_buf,pass1=0,pass2=0;
+
+        set_buffer (_log_list);
+        
+        top_of_buffer();
+        goto_line(Item);
+        TmpStr1 = read();
+
+        return(TmpStr1);
+}
+
+string get_token(string TmpStr2, int Number)
+{
+        string Token;
+        int NumS,NumE,TokenLen;
+
+        NumS = find_token(TmpStr2,Number-1);
+        NumE = find_token(TmpStr2,Number);
+        TokenLen = strlen(TmpStr2);
+        TmpStr2 = substr(TmpStr2,NumS+1,NumE);
+        
+        return(TmpStr2);
+}
+
+int find_token(string Token, int Number)       // Find Token location
+{
+        int     i,j,OrgLen,TokenLen;
+        string  TmpStr;
+        Token = ltrim(Token);
+        OrgLen = TokenLen = strlen(Token);
+        for (i=0;i<Number;i++)
+        {
+                j = index(Token," ");
+                TokenLen = strlen(Token);
+                Token = substr(Token,j,TokenLen);
+                Token = ltrim(Token);
+        }
+        return(j);
+
+}
+
+string cut_first(string Str1)
+{
+        int i,j;
+        i = index(Str1," ");
+        j = strlen(Str1);
+        Str1 = substr(Str1,i,j);
+        Str1 = ltrim(Str1);
+        return(Str1);
+}
+
+void CreateFTE()
+{
+   string prompt,          // Message Prompt
+	  TagDIR,               // TagDIR support iTagFILE/TagFILE [default]
+	  ActDIR;               // Active Tag for Update String
+   string Vendor,          // Verdor Support for Insyde and Phoenix
+	  TagName,              // Insyde/Phoenix vs iTagFile/TagFile
+	  MaskFile,             // File to Search [Default]
+	  ActMask,              // Active File to Search
+     BTMP,
+	  CMD_Line;             // Command Line Process
+   string extension="*.ASM";
+   int    i,j,ret_code;
+   _s_pat = Get_Pattern(); // Get Current Word under Cursor
+
+   getwd("",ActDIR);            // Get Current Directory
+
+   MaskFile = inq_environment("BMASK");
+   if (MaskFile == "")
+     MaskFile = "*.ASM *.INC *.EQU *.CPP *.C *.CC";
+   ActMask = MaskFile;
+
+   if (1) {
+
+   sprintf (prompt, "VGREP Word : ", _s_pat);      // Make Prompt
+   if (_s_pat == "")
+   {
+      _s_pat = "Key In Your Word Here";
+   }
+   if (get_parm (0, _s_pat, prompt, NULL, _s_pat))	// accessing parameters passed to macro
+   {
+      _s_pat = _s_pat;
+      ret_code = 1;
+   }
+   else
+      ret_code = -1;
+
+   if (ret_code == -1)
+   return;
+	TagDIR = inq_environment ("TAGFILE");  // inquire TagName environment
+	if(TagDIR == "")                     // Null TagName environment
+   {
+	    TagDIR = ActDIR;                 // Default as Current Directory
+   }
+	else
+	    ActDIR = TagDIR;
+
+	sprintf (prompt, "þ Directory ", TagDIR);        // Make Prompt
+
+   if (get_parm (0, TagDIR, prompt, NULL, TagDIR))	 // accessing parameters passed to macro
+   {
+      ActDIR = TagDIR;                                   // New Dir if any change
+      ret_code = 1;                                      // Normal return
+   }
+   else 						 // Command cancelled.
+      ret_code = -1;                                     // abort return
+
+   if ( ret_code != -1 )				  // Keep Continue if parameter is passed
+   {
+      message("Active Directory is %s",ActDIR);          // Check Parameter is Pass to ActDIR
+
+      sprintf (prompt, "File to Search ",MaskFile);
+      if (get_parm (0, MaskFile, prompt, NULL, MaskFile))
+      {
+	       ActMask = MaskFile;
+	       ret_code = 1;
+      }
+      else
+	       ret_code = -1;
+
+     ret_code = 1;
+      if ( ret_code != -1 )				 // All Parameter is Pass
+      {
+
+	i = strlen(ActDIR);                              // Auto Correct \\ for Directory
+	j = rindex(ActDIR,"\\");                         // Last occour \\ in ActDIR
+//      sprintf (CMD_Line, "vgrep --sgrep %s %s \"%s\" >&nul",_s_pat,ActDIR,ActMask);
+      sprintf (CMD_Line, "vgrep --grep %s %s \"%s\" >&nul",_s_pat,ActDIR,ActMask);
+      dos (CMD_Line);                                  // Do external Program
+      file_pattern("C:\\FTE.GRP");
+      if (find_file(NULL,NULL,NULL,NULL,NULL))
+        message("þ Index Create Complete. -= F10 VGrep =- Power by Lechee.Lai Copyright 2oo2");
+      else
+        message("Pattern not Founded.");
+     }
+
+       }
+   } 
+}

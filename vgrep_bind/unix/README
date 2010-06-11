@@ -1,0 +1,29 @@
+vgrep
+   
+   A very simply grep work for v-mode
+   same as grep -inr xxx which store in your ~/fte.grp
+   
+   easy reuse via vgrep -v
+   
+   most important support for different text editor 
+   
+   vim: vgrep.vim
+   
+   jed: vgrep.sl
+   
+   crisp: vgrep.cr
+   
+   epsilon: vgrep.e
+   
+   aurora: vgrep.aml
+   
+   tsepro: vgrep.s
+   
+   brief: vgrep.cb
+   
+   fte: built-in native
+   
+   plain to support on emacs and microEMACS
+   
+win32 provide the old windows vgrep compile with lcc
+support more vgrep feature, but no long maintain...

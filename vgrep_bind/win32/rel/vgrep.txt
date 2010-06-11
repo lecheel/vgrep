@@ -1,0 +1,64 @@
+           VGREP -- Visual Grep Selector Plugin for Generic grep 
+         -----------------------------------------------------------
+                      http://www.geocities.com/lecheel
+
+vgrep --grep    show c:\fte.grp for visual select through v.bat
+                <enter>       select and lunch editor via kcedit (fte)
+                <ctrl-enter>  select the file locate directory
+                v	      view history context 
+                v "pattern"   find pattern in current directory
+                set bmask=    filter for *.asm *.inc
+                
+vgrep --where   mini WhereIs for visual select through w.bat
+                <enter>       select for editor
+                <ctrl-enter>  select for directory switch
+                w             view history context
+                w bcp*.asm    find specify filename in home directory
+                
+vgrep --oemtree show oemtip directory for visual select through w.bat 
+                w oem	      find out the oemtip directory
+
+vgrep --mru     show Most Recent Use which is plugin for tde dir ring list
+                basically it most like --where it also create edit.mru and
+                ve.bat in env(Tmp) directory
+                
+vgrep --atags pattern         Phoenix Atags under cursor for MASM 
+
+vgrep --btags                 back tags for atags/btags
+
+vgrep --ctags pattern         Exuberant ctags under cursor
+
+vgrep --fun                   popup for function routine lister
+                              most work for AsmFunction/CppFunction in TDE32
+
+meet you editor modify vgrep.ini currently only fte, tse, tde editor are supported.
+
+===============vgrep.ini========================================================
+editor=tde32
+loadstyle=3        	    # 1=fte 2=tse 3=tde  4=qe  5=fed  6=brief
+grep_style=3                # 1=semware  2=oakGrep   3=gnuGrep  4=TurboGrep
+grepcmd=gnugrep -i -n -S -z # Valid parameter for different grep style
+                            # -n line number is requirement 
+synFile=
+synLine=
+synNorm=
+synAColor=
+synBColor=
+===============end of vgrep.ini=================================================
+
+# most favorities free console editor in non vim/emacs seriers 
+#--------------------------------------------------------------
+# fte 		http://fte.sourceforge.net/
+# fed 		http://www.talula.demon.co.uk/fed/index.html
+# tde 		http://www.geocities.com/jadoxa/tde/index.html
+# qe  		http://www.cc.ncu.edu.tw/~center5/product/qe/
+# zed 		http://zed.c3po.it/index.html
+#
+#--------------------------------------------------------------
+#http://kulakcommander.sourceforge.net
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!                                                                          !!!
+!!! before use those Batch Script set your %bhome% and %bmask% first.        !!!
+!!!                                                                          !!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

@@ -1,0 +1,49 @@
+; -!- emf -!-
+; This is part of the JASSPA MicroEmacs macro files
+; Copyright (C) 2000-2006 JASSPA (www.jasspa.com)
+; See the file me.emf for copying and conditions.
+;
+; Created:     2oo8
+; Synopsis:    Hilighting for GRP files
+; Authors:     Lechee Lai
+;
+;
+define-macro fhook-grp
+    ; Set up the buffer modes
+    -1 buffer-mode "time"
+    !if &band .hilight.flags 0x02
+        set-variable $buffer-hilight .hilight.grp
+    !endif
+    set-variable $buffer-mask "grp"
+    @# buffer-init "grp"
+    buffer-init-hooks
+    1 buffer-bind-key   "le-grp" "return"
+    1 buffer-bind-key   "le-grp" "e"
+    1 buffer-bind-key   "vquit"  "q"
+    1 buffer-bind-key   "le-grp" "C-j"
+!emacro
+
+define-macro vquit
+    delete-buffer $buffer-bname
+!emacro
+
+; buffer-init variables
+set-variable .fhook-grp.name "vGREP"
+set-variable .fhook-grp.command-kbind "|e|q|C-j|return|"
+set-variable .fhook-grp.command-desc  "|\HvGrep save you eye for easy list||"
+
+
+!if &not &exi .hilight.grp
+    set-variable .hilight.grp  &pinc .hilight.next 1
+!endif
+
+!if &band .hilight.flags 0x02
+    0 hilight .hilight.grp 0                 $global-scheme
+    ; Gnu grp utility, uses --context
+    hilight .hilight.grp 0x101 "\\d+"      .scheme.constant
+    ; Common
+    hilight .hilight.grp 0x102 "File"       .scheme.comment
+
+!endif
+
+buffer-init-fhook "grp"

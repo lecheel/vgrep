@@ -1,0 +1,130 @@
+; -!- emf -!-
+; Created:     Jul 18 2oo8
+; Synopsis:    "vgrep" command handling
+; Authors:     Lechee.Lai
+;
+;;---- how to install vgrep ----
+;; put vgrep.emf hpgrp.emf in macros of course 
+;;
+;;     Add those to me.emf
+;;
+;; define-macro-file vgrep vlist vgrep
+;; add-file-hook ".grp"                     fhook-grp
+;; global-bind-key vgrep                    "esc '"
+;; global-bind-key vlist                    "f11"
+;;
+;;
+
+define-macro vlist
+    !if &seq $platform "win32"
+        set-variable $myhome "c:\\"
+    !else
+        set-variable $myhome $home
+    !endif    
+    set-variable #l0 &cat $myhome "fte.grp"
+    view-file #l0
+    set-position "\x88"
+    goto-line 1
+    set-variable #l0 @wl
+    !if &seq &lef #l0 5 "File:"
+        ml-write "Vaild GRP format :-) C-j for selection"
+    !else
+        ml-write "Invaild GRP"
+        !force 0 delete-buffer "fte.grp"
+        !return
+    !endif
+    goto-position "\x88"
+    buffer-init-hooks
+!emacro
+
+define-macro le-grp
+    !if &seq $buffer-bname "fte.grp"
+	set-variable #l0 &left @wl 5
+	!if &seq #l0 "File:"
+        	 set-variable #l2 @wl
+	         set-variable #l3 "FILE"
+	!endif
+
+	!if &seq #l3 "FILE"
+        	set-variable #l3 &right @wl 6
+        	ml-write #l3
+                find-file #l3
+	!else
+                set-variable #l1 @wl
+                !if &gre &set #l4 &rsin ":" #l1 1
+                    set-variable #l0 &lef #l1 &sub #l4 1
+                !else
+                    set-variable #l2 #l1
+                !endif
+	        ml-write #l0
+                ; find filename
+                set-variable #l9 "0"
+                !repeat
+                	backward-line
+                        set-variable #l1 &left @wl 5
+                        !if &seq #l1 "File:"
+		        	 set-variable #l2 @wl
+	        		 set-variable #l3 "FILE"                        
+				!if &seq #l3 "FILE"
+			        	set-variable #l3 &right @wl 6
+			        	ml-write #l3
+                                        set-variable #l9 "FOUNDED"
+                        	!endif
+                        !endif
+                !until &seq #l9 "FOUNDED"
+                !if &seq #l9 "FOUNDED"
+                	find-file #l3
+                	goto-line #l0
+                !endif
+	!endif  
+    !else
+        newline
+    !endif
+!emacro
+
+define-macro vgrep
+    !if &inw @wc
+        set-variable #l0 $window-col
+        forward-char
+        backward-word
+        set-variable #l1 $window-col
+        forward-word
+        set-variable .osd.pat-cur &mid @wl #l1 &sub $window-col #l1
+        set-variable $window-col #l0
+    !else
+        set-variable .osd.pat-cur ""
+    !endif
+    
+    set-variable #l0 @ml1 "vGrep:" .osd.pat-cur
+    !if &less &len #l0 1
+        ml-write "Cancel!"
+        !return
+    !endif
+    !if &xse $buffer-fname ".*\\.c"
+    	set-variable #l5 "*.[ch]"
+    !else
+        !if &seq &set #l3 $buffer-fname ""
+            set-variable #l3 $buffer-bname
+        !endif
+        !if &gre &set #l6 &rsin "." #l3 1
+            set-variable #l4 &lef #l3 &sub #l6 1
+            set-variable #l5 &rig #l3 &sub #l6 1
+            set-variable #l5 &cat "*" #l5
+        !else
+            set-variable #l4 #l3
+            set-variable #l5 "*"
+        !endif
+    !endif    
+    set-variable #l2 @ml01 "Dir" 
+    set-variable #l1 @ml1 "Mask" #l5
+    !force 0 find-buffer "fte.grp"
+    !if $status
+        !force 0 delete-buffer "fte.grp"
+    !endif
+    pipe-shell-command &spr "vgrep --grep %s %s \\%s i" #l0 #l2 #l1
+    delete-buffer "*command*"
+    delete-window "*command*"
+    ml-write "F11 for vlist -- C-j for pickup"
+!emacro
+
+

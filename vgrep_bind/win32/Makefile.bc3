@@ -1,0 +1,16 @@
+# for Release 
+CFLAGS = -A -O -D_BC31_
+# for Debug
+#CFLAGS = -A -g 
+
+PROJ = vgrep.exe
+LIBS = 
+
+OBJS =  v.obj   \
+
+$(PROJ):  $(OBJS) 
+	  @bcc -o lcc\vgrep.exe -map lcc\vgrep.map $(OBJS)
+
+v.obj: v.c  
+
+
