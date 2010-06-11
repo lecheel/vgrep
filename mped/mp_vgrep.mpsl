@@ -1,0 +1,140 @@
+/*
+
+    Minimum Profit 5.x
+    A Programmer's Text Editor
+
+    vGrep.
+
+    Copyright (C) 1991-2009 Angel Ortega <angel@triptico.com>
+
+    This program is free software; you can redistribute it and/or
+    modify it under the terms of the GNU General Public License
+    as published by the Free Software Foundation; either version 2
+    of the License, or (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program; if not, write to the Free Software
+    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+
+    http://www.triptico.com
+
+*/
+
+/** editor actions **/
+
+mp.actions['foo'] = sub (d) {
+    mp.message = {
+            'timeout' => time() + 2,
+            'string'  => sprintf(L("foo>>>%s<<",curdir(".")))
+    };
+};
+
+mp.actions['vlist'] = sub (d) {
+    local d;
+    if (1) {
+        d = mp.open(mp.vgrep_file());
+        d.read_only = 1;
+    } else {
+        mp.message = {
+            'timeout' => time() + 2,
+            'string'  => sprintf(L("Context History not Founded!!"))
+        };
+    }
+};
+
+sub mp.vlist(d) {
+    local w;
+    /* is the word under cursor /^line: ? */
+    mp.move(d, mp.move_bol);
+    if ((w = mp.get_word(d, '/[a-z\._0-9\/ :-]+/i')) != NULL) {
+        w = split(':', w);
+        if (w[0] eq "File") { /* got filename */
+            local txt = d.txt;
+            local fl = txt.lines[y];
+            fl = split(' ',fl);
+            mp.open(fl[1]);
+        } else { /* got line number w[0] */
+            /* also should got filename */
+            mp.search_back(d,"File:");
+            mp.move(d, mp.move_right);
+            local txt = d.txt;
+            local fl = txt.lines[y];
+            fl = split(' ',fl);
+            vd = mp.open(fl[1]);
+            mp.set_y(vd, w[0]-1);
+        }
+    }
+}
+
+sub mp.extension(filename) {
+    local ext;
+    ext = split(".",filename);
+    if (ext[1] eq '') ext[1] = "\\*.*";
+    else ext[1] = "\\*." ~ ext[1];
+    return ext[1];
+}
+
+sub mp.dirname() {
+    return chdir(".");
+}
+
+mp.config.vgrep_cmd = "vgrep";
+mp.actions['vgrep'] = sub (d) {
+
+	local tag = mp.get_word(d);
+	local r = mp.form( [
+		{ 'label'	=> L("vGrep:"),
+		  'type'	=> 'text',
+		  'history'	=> 'find_vgrep',
+                  'value'   	=> tag },
+		{ 'label'	=> L("Files to grep (empty, all):"),
+		  'type'	=> 'text',
+		  'history'	=> 'grep' },
+		{ 'label'	=> L("Base directory (empty, current):"),
+		  'type'	=> 'text',
+		  'history'	=> 'grep_base' }
+	] );
+
+        local f,cmd;
+        if (r != NULL && r[0] ne '') {
+            if ((f = open(mp.vgrep_file(), "r")) == NULL) {
+                mp.alert(L("vgrep fte.grep open Error."));
+            } else {
+
+                if (r[1] eq '') r[1] = ".";
+                if (r[2] eq '') r[2] = mp.extension(d.name);
+                vgrep_cmd = sprintf("vgrep --grep %s %s %s",r[0],r[1],r[2]);
+                /* if force is set, execute the vgrep command */
+                mp.busy(1);
+                if ((f = popen(vgrep_cmd, "r")) == NULL)
+                    return;
+
+                /* read (and discard) a line from it */
+                l=read(f);
+                pclose(f);
+
+                mp.busy(0);
+                /* try again */
+                if ((f = open(mp.vgrep_file(), "r")) == NULL)
+                    return;
+
+                mp.message = {
+                    'timeout' => time() + 2,
+                    'string'  => sprintf(L("vgrep Done!!"))
+                };
+                local d = mp.open(mp.vgrep_file());
+                d.read_only = 1;
+            }
+        }
+};
+
+sub mp.vgrep_file()
+{
+	return (mp.config.local_sessions && './' || HOMEDIR) ~ 'fte.grp';
+};        
+        
