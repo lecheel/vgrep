@@ -5,9 +5,9 @@
  *  Author: Lechee.Lai 2oo2 Dec
  *
  *
- *  http://welcome.to/lechee
+ *  http://lecheel.dyndns.org
  *
- *  vGrep http://www.geocities.com/lechee/vgrep/vgrep.htm
+ *  vGrep http://githuh.com/lecheel/vgrep
  *  Epsilon http://www.lugaru.com/
  *
  *
