@@ -26,39 +26,21 @@
 /**********************************************************************/
 /*   Get the word under the cursor                                    */
 /**********************************************************************/
-static string get_word(string re)
-{	string	function, s;
-    int	i;
-
+static string get_word(void)
+{	
+    string	function;
+    int i;
     save_position();
-    right();
-    objects("word_left");
-    re_search (SF_BACKWARDS | SF_UNIX, re);
-    function = ltrim(trim(read()));
-    s="A-Za-z0-9_";
-    i = re_search(NULL, "[^" + s + "]", function);
-    if (i > 0)
-	function = substr(function, 1, i - 1);
+    re_search(SF_BACKWARDS, "<|{[^_A-Za-z0-9]\\c}");
+    function = trim(read());
+    i = re_search(NULL, "[^_A-Za-z0-9]", function);
+    if (i > 0) {
+        function = trim(substr(function, 1, i - 1));
+    }
     restore_position();
-    if (function) {
-	message("<%s>",function);
-    } else {
-	message("...");
-	function="";
+    if (function == "") {
     }
 
-    /*
-       save_position();
-       re_search(SF_BACKWARDS | SF_UNIX, re);
-       if (re_search(SF_BACKWARDS | SF_UNIX, "^|::[ \t]*" + function) > 0 &&
-       read(2) == "::") {
-       string	c;
-       c = read();
-       c = sub("^\\([A-Za-z_][A-Za-z_0-9]*\\).*$", "\\1", c);
-       class_name = c;
-       }
-       restore_position();
-       */
     return function;
 }
 
@@ -79,16 +61,15 @@ void vlist()
 
 string vgrep(~string, ~string, ...)
 {
-    string s, opt, pattern, file, cdir, dir;
+    string function, opt, pattern, file, cdir, dir;
     string cmd,ext;
     int flags, param;
 
     param = flags = 0;
 
-    s = get_word("^|\\([^" + s + "]\\c\\)");
-
+    function = get_word();
     while (1) {
-	if (! get_parm(param++, opt, "vgrep for Pattern: ",NULL, s)) {
+	if (! get_parm(param++, opt, "vgrep for Pattern: ",NULL, function)) {
 	    return "";
 	}
 	if (opt == "--")  {
